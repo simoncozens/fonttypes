@@ -1,0 +1,28 @@
+{
+  "name": "fonttypes",
+  "version": "1.0.0",
+  "description": "Strongly typed functions for manipulating font source objects",
+  "license": "ISC",
+  "author": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test": "jest",
+    "build": "rimraf dist && tsc",
+    "prepare": "npm run build",
+    "format": "prettier --write .",
+    "docs": "typedoc --options typedoc.config.js src/index.ts"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "rimraf": "^6.1.2",
+    "ts-jest": "^29.4.6",
+    "typedoc": "^0.28.15",
+    "typedoc-github-theme": "^0.3.1",
+    "typescript": "^5.9.3"
+  }
+}
