@@ -19,7 +19,7 @@ export type Support = Record<string, [number, number, number]>;
  */
 export function supportScalar(
   location: NormalizedLocation,
-  support: Support
+  support: Support,
 ): number {
   let scalar = 1;
   for (var [tag, [lower, peak, upper]] of Object.entries(support)) {
@@ -118,21 +118,21 @@ export class VariationModel {
           .reduce((obj: NormalizedLocation, key: string) => {
             obj[key] = loc[key]!;
             return obj;
-          }, {})
+          }, {}),
       );
     }
     var [keyFunc, axisPoints] = this.getMasterLocationsSortKeyFunc(
       loc2,
-      this.axisOrder
+      this.axisOrder,
     );
     this.locations = loc2.sort(keyFunc);
     this.mapping = this.origLocations.map((l) =>
-      this.locations.map((x) => JSON.stringify(x)).indexOf(JSON.stringify(l))
+      this.locations.map((x) => JSON.stringify(x)).indexOf(JSON.stringify(l)),
     );
     this.reverseMapping = this.locations.map((l) =>
       this.origLocations
         .map((x) => JSON.stringify(x))
-        .indexOf(JSON.stringify(l))
+        .indexOf(JSON.stringify(l)),
     );
     this.computeMasterSupports(axisPoints);
     this.subModels = new Map<number[], VariationModel>();
@@ -158,7 +158,7 @@ export class VariationModel {
 
   private getMasterLocationsSortKeyFunc(
     locations: NormalizedLocation[],
-    axisOrder: string[]
+    axisOrder: string[],
   ): [SortFunction, Record<string, Set<number>>] {
     var axisPoints: Record<string, Set<number>> = {};
     for (var loc of locations) {
@@ -362,7 +362,7 @@ export class VariationModel {
    */
   interpolateFromDeltasAndScalars(
     deltas: number[],
-    scalars: number[]
+    scalars: number[],
   ): number | null {
     let v: number | null = null;
     console.assert(deltas.length == scalars.length);
@@ -392,7 +392,7 @@ export class VariationModel {
    */
   interpolateFromDeltas(
     loc: NormalizedLocation,
-    deltas: number[]
+    deltas: number[],
   ): number | null {
     let scalars = this.getScalars(loc);
     return this.interpolateFromDeltasAndScalars(deltas, scalars);

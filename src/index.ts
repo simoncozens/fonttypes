@@ -1,4 +1,5 @@
 /**
+ * {@include ../README.md}
  * @packageDocumentation
  *
  * @groupDescription Coordinates And Locations

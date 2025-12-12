@@ -150,7 +150,7 @@ export type NormalizedLocation = Location<Normalized>;
  */
 export type Mapping<SpaceFrom extends Space, SpaceTo extends Space> = [
   Coordinate<SpaceFrom>,
-  Coordinate<SpaceTo>
+  Coordinate<SpaceTo>,
 ][];
 /**
  * A mapping from design space to user space.
@@ -178,10 +178,10 @@ export type UserspaceToDesignspaceMapping = Mapping<Userspace, Designspace>;
  */
 export function piecewiseLinearMap<
   SpaceFrom extends Space,
-  SpaceTo extends Space
+  SpaceTo extends Space,
 >(
   input: Coordinate<SpaceFrom>,
-  mapping: Mapping<SpaceFrom, SpaceTo>
+  mapping: Mapping<SpaceFrom, SpaceTo>,
 ): Coordinate<SpaceTo> {
   if (mapping.length === 0) {
     return input as any;
@@ -243,7 +243,7 @@ export interface Axis {
  */
 export function userspaceToDesignspace(
   location: UserspaceLocation,
-  axes: Axis[]
+  axes: Axis[],
 ): DesignspaceLocation {
   const result: DesignspaceLocation = {};
   for (const axis of axes) {
@@ -266,7 +266,7 @@ export function userspaceToDesignspace(
  */
 export function designspaceToUserspace(
   location: DesignspaceLocation,
-  axes: Axis[]
+  axes: Axis[],
 ): UserspaceLocation {
   const result: UserspaceLocation = {};
   for (const axis of axes) {
@@ -299,7 +299,7 @@ export function designspaceToUserspace(
 export function normalizeValue(
   designValue: DesignspaceCoordinate,
   axis: Axis,
-  extrapolate: boolean = false
+  extrapolate: boolean = false,
 ): NormalizedCoordinate {
   /*
     >>> normalizeValue(400, (100, 400, 900))
@@ -315,7 +315,7 @@ export function normalizeValue(
   if (!(lower <= _default && _default <= upper)) {
     throw new Error(
       `Invalid axis values, must be minimum, default, maximum: ` +
-        `${lower.toFixed(3)}, ${_default.toFixed(3)}, ${upper.toFixed(3)}`
+        `${lower.toFixed(3)}, ${_default.toFixed(3)}, ${upper.toFixed(3)}`,
     );
   }
   let v = designValue as number;
@@ -348,7 +348,7 @@ export function normalizeValue(
  */
 export function normalizeLocation(
   location: DesignspaceLocation,
-  axes: Axis[]
+  axes: Axis[],
 ): NormalizedLocation {
   const result: NormalizedLocation = {};
   for (const axis of axes) {
