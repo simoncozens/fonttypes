@@ -5,14 +5,10 @@ on:
       - "main"
 
 jobs:
-  publish-documentation:
+  build:
     permissions:
       id-token: "write"
       pages: "write"
-
-    environment:
-      name: "github-pages"
-      url: "${{ steps.deployment.outputs.page_url }}"
 
     runs-on: "ubuntu-latest"
     steps:
@@ -32,13 +28,18 @@ jobs:
         run: |
           npm run docs
           cp docs/modules.html docs/index.html # I prefer the modules doc
-      
-      - id: "upload-documentation"
+      - id: deployment
         name: "Upload Pages artifact"
-        uses: "actions/upload-pages-artifact@v2"
+        uses: "actions/upload-pages-artifact@v3"
         with:
           path: "docs/"
-
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - id: "deployment"
         name: "Deploy documentation to GitHub Pages"
-        uses: "actions/deploy-pages@v2"
+        uses: "actions/deploy-pages@v4"
