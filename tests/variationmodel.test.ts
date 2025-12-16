@@ -110,7 +110,7 @@ describe("VariationModel", () => {
     for (let [masterLocations, location, expected] of scenarios) {
       const model = new VariationModel(
         masterLocations as NormalizedLocation[],
-        ["wdth", "wght"]
+        ["wdth", "wght"],
       );
       const scalars = model.getMasterScalars(location as NormalizedLocation);
       console.log({ masterLocations, location, scalars, expected });
@@ -138,17 +138,17 @@ describe("VariationModel", () => {
     const masterScalars = [0.25, 0.0, 0.0, -0.25, 0.5, 0.5];
     const model = new VariationModel(
       locations as NormalizedLocation[],
-      axisOrder
+      axisOrder,
     );
     const interpolatedValue = model.interpolateFromMasters(
       instanceLocation,
-      masterValues
+      masterValues,
     )!;
     expect(interpolatedValue).toBeCloseTo(expectedValue);
     expect(masterScalars).toEqual(model.getMasterScalars(instanceLocation));
 
     expect(
-      model.interpolateFromValuesAndScalars(masterValues, masterScalars)!
+      model.interpolateFromValuesAndScalars(masterValues, masterScalars)!,
     ).toBeCloseTo(interpolatedValue);
   });
 });
