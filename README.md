@@ -9,7 +9,7 @@ for OpenType interpolation.
 ## Installation
 
 ```bash
-npm install fonttypes
+npm install @simoncozens/fonttypes
 ```
 
 ## Usage
@@ -36,7 +36,7 @@ import {
   normalizeLocation,
   VariationModel,
   NormalizedLocation,
-} from "fonttypes";
+} from "@simoncozens/fonttypes";
 
 // Define the axes for a variable font
 let weightMap: UserspaceToDesignspaceMapping = [
