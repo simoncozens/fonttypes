@@ -1,5 +1,5 @@
 {
-  "name": "fonttypes",
+  "name": "@simoncozens/fonttypes",
   "version": "1.0.0",
   "description": "Strongly typed functions for manipulating font source objects",
   "license": "Apache-2.0",
