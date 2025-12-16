@@ -62,7 +62,7 @@ const axes: Axis[] = [
 const userLocation: UserspaceLocation = { wght: 650 };
 const designLocation: DesignspaceLocation = userspaceToDesignspace(
   userLocation,
-  axes
+  axes,
 );
 console.log("Designspace location:", designLocation);
 // -> Designspace location: { wght: 550 }
@@ -70,7 +70,7 @@ console.log("Designspace location:", designLocation);
 // Normalize the designspace location
 const normalizedLocation: NormalizedLocation = normalizeLocation(
   designLocation,
-  axes
+  axes,
 );
 console.log("Normalized location:", normalizedLocation);
 // -> Normalized location: { wght: 0.3 }
@@ -93,7 +93,7 @@ const masterValues = [150, 100, 250]; // Corresponds to default, min, max
 // Interpolate the x-position at our normalized location
 const interpolatedValue = model.interpolateFromMasters(
   normalizedLocation,
-  masterValues
+  masterValues,
 );
 
 console.log("Interpolated value:", interpolatedValue);
