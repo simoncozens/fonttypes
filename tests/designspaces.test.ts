@@ -1,5 +1,9 @@
-import { normalizeLocation } from "../src/designspaces";
-import type { Axis } from "../src/designspaces";
+import { normalizeLocation, userspaceToDesignspace } from "../src/designspaces";
+import type {
+  Axis,
+  UserspaceLocation,
+  UserspaceToDesignspaceMapping,
+} from "../src/designspaces";
 
 describe("normalizeLocation", () => {
   it("should normalize a location", () => {
@@ -24,5 +28,28 @@ describe("normalizeLocation", () => {
     expect(normalizeLocation({ wght: 500 }, axes3)).toEqual({ wght: -0.5 });
     expect(normalizeLocation({ wght: 1000 }, axes3)).toEqual({ wght: 0.0 });
     expect(normalizeLocation({ wght: 1001 }, axes3)).toEqual({ wght: 0.0 });
+  });
+});
+
+describe("userspaceToDesignspace", () => {
+  it("should convert userspace to designspace", () => {
+    let weightMap: UserspaceToDesignspaceMapping = [
+      [100, 100],
+      [400, 400],
+      [700, 600],
+      [900, 900],
+    ];
+    const axes: Axis[] = [
+      {
+        tag: "wght",
+        min: 100,
+        default: 400,
+        max: 900,
+        map: weightMap,
+      },
+    ];
+    const userLocation: UserspaceLocation = { wght: 650 };
+    const designLocation = userspaceToDesignspace(userLocation, axes);
+    expect(designLocation.wght).toBeCloseTo(566 + 2.0 / 3.0);
   });
 });
