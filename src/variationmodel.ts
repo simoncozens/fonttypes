@@ -19,7 +19,7 @@ export type Support = Record<string, [number, number, number]>;
  */
 export function supportScalar(
   location: NormalizedLocation,
-  support: Support,
+  support: Support
 ): number {
   let scalar = 1;
   for (var [tag, [lower, peak, upper]] of Object.entries(support)) {
@@ -106,7 +106,7 @@ export class VariationModel {
    * @param axisOrder A list of axis tags defining the order of axes
    */
   constructor(locations: NormalizedLocation[], axisOrder: string[]) {
-    this.axisOrder = [];
+    this.axisOrder = axisOrder;
     this.origLocations = locations;
     this.deltaWeights = []; // Make compiler happier
     this.supports = []; // Make compiler happier
@@ -118,23 +118,21 @@ export class VariationModel {
           .reduce((obj: NormalizedLocation, key: string) => {
             obj[key] = loc[key]!;
             return obj;
-          }, {}),
+          }, {})
       );
     }
-    var [keyFunc, axisPoints] = this.getMasterLocationsSortKeyFunc(
-      loc2,
-      this.axisOrder,
-    );
+    var keyFunc = this.getMasterLocationsSortKeyFunc(loc2, this.axisOrder);
     this.locations = loc2.sort(keyFunc);
+    console.log("Sorted locations:", this.locations);
     this.mapping = this.origLocations.map((l) =>
-      this.locations.map((x) => JSON.stringify(x)).indexOf(JSON.stringify(l)),
+      this.locations.map((x) => JSON.stringify(x)).indexOf(JSON.stringify(l))
     );
     this.reverseMapping = this.locations.map((l) =>
       this.origLocations
         .map((x) => JSON.stringify(x))
-        .indexOf(JSON.stringify(l)),
+        .indexOf(JSON.stringify(l))
     );
-    this.computeMasterSupports(axisPoints);
+    this.computeMasterSupports();
     this.subModels = new Map<number[], VariationModel>();
   }
 
@@ -158,8 +156,8 @@ export class VariationModel {
 
   private getMasterLocationsSortKeyFunc(
     locations: NormalizedLocation[],
-    axisOrder: string[],
-  ): [SortFunction, Record<string, Set<number>>] {
+    axisOrder: string[]
+  ): SortFunction {
     var axisPoints: Record<string, Set<number>> = {};
     for (var loc of locations) {
       if (Object.keys(loc).length != 1) {
@@ -173,38 +171,116 @@ export class VariationModel {
       axisPoints[axis]!.add(value as number);
     }
 
-    var func = function (a: NormalizedLocation, b: NormalizedLocation): number {
-      var keyLen = Object.keys(a).length - Object.keys(b).length;
-      if (keyLen != 0) {
-        return keyLen;
-      }
-      var onpoint_a: string[] = Object.keys(a).filter((axis) => {
-        axis in axisPoints && axisPoints[axis]!.has(a[axis]! as number);
-      });
-      var onpoint_b: string[] = Object.keys(b).filter((axis) => {
-        axis in axisPoints && axisPoints[axis]!.has(b[axis]! as number);
-      });
-      var onpoint = onpoint_a.length - onpoint_b.length;
-      if (onpoint != 0) {
-        return onpoint;
-      }
-      for (var axis of Object.keys(a)) {
-        if (Math.sign(a[axis] as number) != Math.sign(b[axis] as number)) {
-          return Math.sign(a[axis] as number) - Math.sign(b[axis] as number);
+    const getSortFunc = (
+      axisPoints: Record<string, Set<number>>,
+      axisOrder: string[]
+    ) => {
+      const sign = (v: number) => {
+        return v < 0 ? -1 : v > 0 ? +1 : 0;
+      };
+      const sortFunc = (
+        loc_a: NormalizedLocation,
+        loc_b: NormalizedLocation
+      ) => {
+        let rank_a = Object.keys(loc_a).length;
+        let onPointAxes_a = Object.entries(loc_a).filter(
+          ([axis, value]) =>
+            axis in axisPoints && axisPoints[axis]!.has(value as number)
+        );
+        let orderedAxes_a = axisOrder.filter((axis) => axis in loc_a);
+        // Now add any axis appearing in the location but not in axisOrder
+        for (let axis of Object.keys(loc_a).sort()) {
+          if (!axisOrder.includes(axis)) {
+            orderedAxes_a.push(axis);
+          }
         }
-      }
-      return 0;
+        // Now do all that for location b
+        let rank_b = Object.keys(loc_b).length;
+        let onPointAxes_b = Object.entries(loc_b).filter(
+          ([axis, value]) =>
+            axis in axisPoints && axisPoints[axis]!.has(value as number)
+        );
+        let orderedAxes_b = axisOrder.filter((axis) => axis in loc_b);
+        for (let axis of Object.keys(loc_b).sort()) {
+          if (!axisOrder.includes(axis)) {
+            orderedAxes_b.push(axis);
+          }
+        }
+        // Sort them first in order of rank
+        if (rank_a != rank_b) {
+          return rank_a - rank_b;
+        }
+        console.log("Ranks are same, checking on-point axes");
+        // Next by decreasing number of on-point axes
+        if (onPointAxes_a.length != onPointAxes_b.length) {
+          return onPointAxes_b.length - onPointAxes_a.length;
+        }
+        console.log("On-point axes are same, checking axis order");
+        // Next, by axis order, known axes first
+        /*
+        tuple(
+          axisOrder.index(axis) if axis in axisOrder else 0x10000
+          for axis in orderedAxes
+        )
+        */
+        let axisOrders_a = [...orderedAxes_a].map((axis) =>
+          axisOrder.includes(axis) ? axisOrder.indexOf(axis) : 0x10000
+        );
+        let axisOrders_b = [...orderedAxes_b].map((axis) =>
+          axisOrder.includes(axis) ? axisOrder.indexOf(axis) : 0x10000
+        );
+        for (
+          let i = 0;
+          i < Math.min(axisOrders_a.length, axisOrders_b.length);
+          i++
+        ) {
+          if (axisOrders_a[i]! != axisOrders_b[i]!) {
+            return axisOrders_a[i]! - axisOrders_b[i]!;
+          }
+        }
+        console.log("Axis order same, checking all axes");
+        // Next, by all axes
+        // Compare lexicographically, element by element
+        const minLen = Math.min(orderedAxes_a.length, orderedAxes_b.length);
+        for (let i = 0; i < minLen; i++) {
+          const axisA = orderedAxes_a[i]!;
+          const axisB = orderedAxes_b[i]!;
+          if (axisA != axisB) {
+            return axisA < axisB ? -1 : 1;
+          }
+        }
+        // If all compared elements are equal, the shorter array comes first
+        if (orderedAxes_a.length != orderedAxes_b.length) {
+          return orderedAxes_a.length - orderedAxes_b.length;
+        }
+
+        // Finally, by sign and absolute value
+        for (let axis of orderedAxes_a) {
+          let sign_a = sign(loc_a[axis] as number);
+          let sign_b = sign(loc_b[axis] as number);
+          if (sign_a != sign_b) {
+            return sign_a - sign_b;
+          }
+          let abs_a = Math.abs(loc_a[axis] as number);
+          let abs_b = Math.abs(loc_b[axis] as number);
+          if (abs_a != abs_b) {
+            return abs_a - abs_b;
+          }
+        }
+        return 0;
+      };
+      return sortFunc;
     };
-    return [func, axisPoints];
+    return getSortFunc(axisPoints, axisOrder);
   }
 
-  private computeMasterSupports(axisPoints: Record<string, Set<number>>) {
+  private computeMasterSupports() {
     let supports: Support[] = [];
     let regions = this.locationsToRegions();
-    for (var i in regions) {
+    for (let i = 0; i < regions.length; i++) {
       var region: Support = regions[i]!;
       let locAxes = new Set(Object.keys(region));
-      for (var j in [...Array(i).keys()]) {
+      for (let j = 0; j < i; j++) {
         var prev_region = regions[j]!;
         if (!isSuperset(locAxes, new Set(Object.keys(prev_region)))) {
           continue;
@@ -282,8 +358,8 @@ export class VariationModel {
       }
     }
     let regions = [];
-    for (var i in locations) {
-      let loc = locations[i];
+    for (let i = 0; i < locations.length; i++) {
+      let loc = locations[i]!;
       let region: Support = {};
       for (var [axis, locV] of Object.entries(loc!)) {
         if ((locV as number) > 0) {
@@ -351,6 +427,37 @@ export class VariationModel {
   }
 
   /**
+   * Return multipliers for each master, for the given location.
+   * 
+   * If interpolating many master-values at the same location,
+   * this function allows speed up by fetching the scalars once
+   * and using them with interpolateFromValuesAndScalars().
+   * 
+   * Note that the scalars used in interpolateFromMastersAndScalars()
+   * are *not* the same as the ones returned here. They are the result
+   * of getScalars().
+   * 
+   * @param loc A normalized location
+   * @returns Scalars for each master in the original input order
+   * @group Interpolation and Variation Models
+   * @category Variation models
+   * @summary Get master scalars for interpolation
+   */
+  getMasterScalars(loc: NormalizedLocation): number[] {
+    let out = this.getScalars(loc);
+    // Process in reverse order
+    for (let i = this.deltaWeights.length - 1; i >= 0; i--) {
+      const weights = this.deltaWeights[i]!;
+      for (const j in weights) {
+        const weight = weights[j]!;
+        out[j] -= out[i]! * weight;
+      }
+    }
+    // Remap to original order
+    return this.mapping.map((idx) => out[idx]!);
+  }
+
+  /**
    * Interpolate a set of values from pre-fetched deltas and scalars.
    * This is useful if you need to interpolate multiple values at the same location.
    * @group Interpolation and Variation Models
@@ -362,16 +469,40 @@ export class VariationModel {
    */
   interpolateFromDeltasAndScalars(
     deltas: number[],
-    scalars: number[],
+    scalars: number[]
+  ): number | null {
+    return this.interpolateFromValuesAndScalars(deltas, scalars);
+  }
+
+  /**
+   * Interpolate from values and scalars coefficients.
+   * 
+   * If the values are master-values, then the scalars should be
+   * fetched from getMasterScalars().
+   * 
+   * If the values are deltas, then the scalars should be fetched
+   * from getScalars(); in which case this is the same as
+   * interpolateFromDeltasAndScalars().
+   * 
+   * @param values Values to interpolate (either master values or deltas)
+   * @param scalars Scalars in the same order as values
+   * @returns The interpolated value, or null if no contribution
+   * @group Interpolation and Variation Models
+   * @category Interpolation
+   * @summary Interpolate from values and scalars
+   */
+  interpolateFromValuesAndScalars(
+    values: number[],
+    scalars: number[]
   ): number | null {
     let v: number | null = null;
-    console.assert(deltas.length == scalars.length);
-    deltas.forEach((delta, ix) => {
+    console.assert(values.length == scalars.length);
+    values.forEach((value, ix) => {
       let scalar = scalars[ix];
       if (!scalar) {
         return;
       }
-      let contribution = delta * scalar;
+      let contribution = value * scalar;
       if (v == null) {
         v = contribution;
       } else {
@@ -392,7 +523,7 @@ export class VariationModel {
    */
   interpolateFromDeltas(
     loc: NormalizedLocation,
-    deltas: number[],
+    deltas: number[]
   ): number | null {
     let scalars = this.getScalars(loc);
     return this.interpolateFromDeltasAndScalars(deltas, scalars);
@@ -408,8 +539,8 @@ export class VariationModel {
    * @returns The interpolated value
    */
   interpolateFromMasters(loc: NormalizedLocation, masterValues: number[]) {
-    let deltas = this.getDeltas(masterValues);
-    return this.interpolateFromDeltas(loc, deltas);
+    let scalars = this.getMasterScalars(loc);
+    return this.interpolateFromValuesAndScalars(masterValues, scalars);
   }
 
   /**
