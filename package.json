@@ -2,13 +2,28 @@
   "name": "fonttypes",
   "version": "1.0.0",
   "description": "Strongly typed functions for manipulating font source objects",
-  "license": "ISC",
-  "author": "",
+  "license": "Apache-2.0",
+  "author": "Simon Cozens <simon@simon-cozens.org>",
+  "repository": "https://github.com/simoncozens/fonttypes/",
+  "homepage": "https://simoncozens.github.io/fonttypes",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "keywords": [
+    "font",
+    "typography",
+    "types",
+    "opentype",
+    "truetype",
+    "variable fonts",
+    "interpolation"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "sideEffects": false,
   "scripts": {
     "test": "jest",
     "build": "rimraf dist && tsc",
